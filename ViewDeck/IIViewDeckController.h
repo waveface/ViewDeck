@@ -54,6 +54,12 @@ typedef enum {
     IIViewDeckRotationKeepsViewSizes  // when rotating, the size view sizes are kept (ledges change)
 } IIViewDeckRotationBehavior;
 
+typedef enum {
+  IIViewDeckAnimationShow,
+  IIViewDeckAnimationPullIn,
+  IIViewDeckAnimationFloatingDeck
+} IIViewDeckAnimationBehavior;
+
 
 #define IIViewDeckCenterHiddenCanTapToClose(interactivity) ((interactivity) == IIViewDeckCenterHiddenNotUserInteractiveWithTapToClose || (interactivity) == IIViewDeckCenterHiddenNotUserInteractiveWithTapToCloseBouncing)
 #define IIViewDeckCenterHiddenIsInteractive(interactivity) ((interactivity) == IIViewDeckCenterHiddenUserInteractive)
@@ -87,6 +93,7 @@ typedef void (^IIViewDeckControllerBlock) (IIViewDeckController *controller);
 @property (nonatomic) IIViewDeckCenterHiddenInteractivity centerhiddenInteractivity;
 @property (nonatomic) IIViewDeckNavigationControllerBehavior navigationControllerBehavior;
 @property (nonatomic) IIViewDeckRotationBehavior rotationBehavior;
+@property (nonatomic) IIViewDeckAnimationBehavior animationBehavior;
 @property (nonatomic) BOOL automaticallyUpdateTabBarItems;
 
 - (id)initWithCenterViewController:(UIViewController*)centerController;
