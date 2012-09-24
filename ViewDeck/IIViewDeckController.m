@@ -554,9 +554,19 @@ __typeof__(h) __h = (h);                                    \
         self.centerView.frame = self.centerViewBounds;
         self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.centerController.view.frame = self.centerView.bounds;
-        self.leftController.view.frame = self.sideViewBounds;
+
+        if (self.animationBehavior == IIViewDeckAnimationFloatingDeck)
+            self.leftController.view.frame = CGRectInset(self.sideViewBounds, 20, 20);
+        else
+            self.leftController.view.frame = self.sideViewBounds;
+      
         self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.rightController.view.frame = self.sideViewBounds;
+      
+        if (self.animationBehavior == IIViewDeckAnimationFloatingDeck)
+            self.rightController.view.frame = CGRectInset(self.sideViewBounds, 20, 20);
+        else
+            self.rightController.view.frame = self.sideViewBounds;
+      
         self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
         [self applyShadowToSlidingView];
@@ -629,7 +639,7 @@ __typeof__(h) __h = (h);                                    \
       [self openWithFloatingDeckAnimation:aView options:options];
     
   } else if(self.animationBehavior == IIViewDeckAnimationPullIn) {
-      if (ledge == self.rightLedge)
+      if (aView == self.rightController.view)
         ledge = -(ledge);
     
       [self openWithPullinAnimation:aView ledge:ledge options:options];
@@ -645,7 +655,7 @@ __typeof__(h) __h = (h);                                    \
       [self closeWithFloatingDeckAnimation:aView options:options];
     
   } else if (self.animationBehavior == IIViewDeckAnimationPullIn) {
-      if (ledge == self.rightLedge)
+      if (aView == self.rightController.view)
         ledge = -(ledge);
     
       [self closeWithPullinAnimation:aView ledge:ledge options:options];
@@ -655,55 +665,32 @@ __typeof__(h) __h = (h);                                    \
 }
 
 - (void)openWithFloatingDeckAnimation:(UIView*)aView options:(UIViewAnimationOptions)options {
-  CGRect origFrame = aView.frame;
-  __block UIView *overlay = nil;
-  
-  aView.frame = CGRectInset(origFrame, 20, 20);
-  overlay = [[UIView alloc] initWithFrame:origFrame];
-  overlay.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.85];
-  [aView addSubview:overlay];
   
   [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
                         delay:0
                       options:options | UIViewAnimationOptionLayoutSubviews
                    animations:^{
                      
-                      aView.frame = origFrame;
-                      overlay.alpha = 0;
+                      aView.frame = self.sideViewBounds;
                      
                    } completion:^(BOOL finished) {
                      
-                     if (finished) {
-                       if (overlay != nil) {
-                         [overlay removeFromSuperview];
-                         overlay = nil;
-                       }
-                     }
                      
                    }];
   
 }
 
 - (void)closeWithFloatingDeckAnimation:(UIView*)aView options:(UIViewAnimationOptions)options {
-  CGRect origFrame = aView.frame;
-  UIView *overlay = [[UIView alloc] initWithFrame:origFrame];
-  overlay.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0];
-  [aView addSubview:overlay];
   
   [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
                         delay:0
                       options:options | UIViewAnimationOptionLayoutSubviews
                    animations:^{
                      
-                        aView.frame = CGRectInset(origFrame, 20, 20);
-                        overlay.alpha = 0.85;
+                        aView.frame = CGRectInset(self.sideViewBounds, 20, 20);
                      
                    } completion:^(BOOL finished) {
                      
-                      if (finished) {
-                        [overlay removeFromSuperview];
-                        aView.frame = origFrame;
-                      }
                      
                    }];
 }
