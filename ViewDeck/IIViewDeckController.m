@@ -640,7 +640,7 @@ __typeof__(h) __h = (h);                                    \
     
   } else if(self.animationBehavior == IIViewDeckAnimationPullIn) {
       if (aView == self.rightController.view)
-        ledge = -(ledge);
+        ledge = -(ledge/2);
     
       [self openWithPullinAnimation:aView ledge:ledge options:options];
     
@@ -656,7 +656,7 @@ __typeof__(h) __h = (h);                                    \
     
   } else if (self.animationBehavior == IIViewDeckAnimationPullIn) {
       if (aView == self.rightController.view)
-        ledge = -(ledge);
+        ledge = -(ledge/2);
     
       [self closeWithPullinAnimation:aView ledge:ledge options:options];
     
