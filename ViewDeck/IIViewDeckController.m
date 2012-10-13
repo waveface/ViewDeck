@@ -228,6 +228,7 @@ __typeof__(h) __h = (h);                                    \
         _navigationControllerBehavior = IIViewDeckNavigationControllerContained;
         _centerhiddenInteractivity = IIViewDeckCenterHiddenUserInteractive;
         _rotationBehavior = IIViewDeckRotationKeepsLedgeSizes;
+        _animationBehavior = IIViewDeckAnimationShow;
         _viewAppeared = NO;
         _resizesCenterView = NO;
         _automaticallyUpdateTabBarItems = NO;
@@ -587,9 +588,19 @@ __typeof__(h) __h = (h);                                    \
         self.centerView.frame = self.centerViewBounds;
         self.centerController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.centerController.view.frame = self.centerView.bounds;
-        self.leftController.view.frame = self.sideViewBounds;
+
+        if (self.animationBehavior == IIViewDeckAnimationFloatingDeck)
+            self.leftController.view.frame = CGRectInset(self.sideViewBounds, 20, 20);
+        else
+            self.leftController.view.frame = self.sideViewBounds;
+      
         self.leftController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        self.rightController.view.frame = self.sideViewBounds;
+      
+        if (self.animationBehavior == IIViewDeckAnimationFloatingDeck)
+            self.rightController.view.frame = CGRectInset(self.sideViewBounds, 20, 20);
+        else
+            self.rightController.view.frame = self.sideViewBounds;
+      
         self.rightController.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
         [self applyShadowToSlidingView];
@@ -652,6 +663,106 @@ __typeof__(h) __h = (h);                                    \
         [controller viewDidDisappear:animated];
     }];
 }
+
+#pragma mark - Additional animations
+
+- (void)openWithAdditionalAnimations:(UIView*)aView ledge:(CGFloat)ledge options:(UIViewAnimationOptions)options {
+
+  if (self.animationBehavior == IIViewDeckAnimationFloatingDeck) {
+    
+      [self openWithFloatingDeckAnimation:aView options:options];
+    
+  } else if(self.animationBehavior == IIViewDeckAnimationPullIn) {
+      if (aView == self.rightController.view)
+        ledge = -(ledge/2);
+    
+      [self openWithPullinAnimation:aView ledge:ledge options:options];
+    
+  }
+
+}
+
+- (void)closeWithAdditionalAnimations:(UIView*)aView ledge:(CGFloat)ledge options:(UIViewAnimationOptions)options {
+  
+  if (self.animationBehavior == IIViewDeckAnimationFloatingDeck) {
+    
+      [self closeWithFloatingDeckAnimation:aView options:options];
+    
+  } else if (self.animationBehavior == IIViewDeckAnimationPullIn) {
+      if (aView == self.rightController.view)
+        ledge = -(ledge/2);
+    
+      [self closeWithPullinAnimation:aView ledge:ledge options:options];
+    
+  }
+
+}
+
+- (void)openWithFloatingDeckAnimation:(UIView*)aView options:(UIViewAnimationOptions)options {
+  
+  [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
+                        delay:0
+                      options:options | UIViewAnimationOptionLayoutSubviews
+                   animations:^{
+                     
+                      aView.frame = self.sideViewBounds;
+                     
+                   } completion:^(BOOL finished) {
+                     
+                     
+                   }];
+  
+}
+
+- (void)closeWithFloatingDeckAnimation:(UIView*)aView options:(UIViewAnimationOptions)options {
+  
+  [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
+                        delay:0
+                      options:options | UIViewAnimationOptionLayoutSubviews
+                   animations:^{
+                     
+                        aView.frame = CGRectInset(self.sideViewBounds, 20, 20);
+                     
+                   } completion:^(BOOL finished) {
+                     
+                     
+                   }];
+}
+
+- (void)openWithPullinAnimation:(UIView*)aView ledge:(CGFloat)ledge options:(UIViewAnimationOptions)options {
+  CGRect origFrame = aView.frame;
+  
+  aView.frame = CGRectInset(origFrame, -(ledge), 0);
+  [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
+                        delay:0
+                      options:options | UIViewAnimationOptionLayoutSubviews
+                   animations:^{
+                     
+                      aView.frame = origFrame;
+                     
+                   }
+                   completion:nil];
+}
+
+- (void)closeWithPullinAnimation:(UIView*)aView ledge:(CGFloat)ledge options:(UIViewAnimationOptions)options {
+  
+  CGRect origFrame = aView.frame;
+  [UIView animateWithDuration:OPEN_SLIDE_DURATION(YES)
+                        delay:0
+                      options:options | UIViewAnimationOptionLayoutSubviews
+                   animations:^{
+                     
+                     aView.frame = CGRectInset(origFrame, -(ledge), 0);
+                     
+                   } completion:^(BOOL finished) {
+                     
+                     if (finished) {
+                        aView.frame = origFrame;
+                     }
+                     
+                   }];
+}
+
 
 #pragma mark - rotation
 
@@ -854,6 +965,7 @@ __typeof__(h) __h = (h);                                    \
     return [self openLeftViewAnimated:animated options:UIViewAnimationOptionCurveEaseInOut callDelegate:callDelegate completion:completed];
 }
 
+
 - (BOOL)openLeftViewAnimated:(BOOL)animated options:(UIViewAnimationOptions)options callDelegate:(BOOL)callDelegate completion:(IIViewDeckControllerBlock)completed {
     if (!self.leftController || II_FLOAT_EQUAL(CGRectGetMinX(self.slidingControllerView.frame), self.leftLedge)) return YES;
     
@@ -861,7 +973,13 @@ __typeof__(h) __h = (h);                                    \
     if (callDelegate && ![self checkDelegate:@selector(viewDeckControllerWillOpenLeftView:animated:) animated:animated]) return NO;
     // also close the right view if it's open. Since the delegate can cancel the close, check the result.
     if (callDelegate && ![self closeRightViewAnimated:animated options:options callDelegate:callDelegate completion:completed]) return NO;
-    
+  
+    if (animated) {
+        [self openWithAdditionalAnimations:self.leftController.view
+                                      ledge:self.leftLedge
+                                    options:options];
+    }
+  
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews | UIViewAnimationOptionBeginFromCurrentState animations:^{
         self.leftController.view.hidden = NO;
         [self setSlidingFrameForOffset:self.referenceBounds.size.width - self.leftLedge];
@@ -870,7 +988,7 @@ __typeof__(h) __h = (h);                                    \
         if (completed) completed(self);
         if (callDelegate) [self performDelegate:@selector(viewDeckControllerDidOpenLeftView:animated:) animated:animated];
     }];
-    
+      
     return YES;
 }
 
@@ -932,7 +1050,13 @@ __typeof__(h) __h = (h);                                    \
     
     // check the delegate to allow closing
     if (callDelegate && ![self checkDelegate:@selector(viewDeckControllerWillCloseLeftView:animated:) animated:animated]) return NO;
-    
+  
+    if (animated) {
+        [self closeWithAdditionalAnimations:self.leftController.view
+                                     ledge:self.leftLedge
+                                   options:options];
+    }
+  
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         [self setSlidingFrameForOffset:0];
         [self centerViewVisible];
@@ -1077,7 +1201,13 @@ __typeof__(h) __h = (h);                                    \
     if (callDelegate && ![self checkDelegate:@selector(viewDeckControllerWillOpenRightView:animated:) animated:animated]) return NO;
     // also close the left view if it's open. Since the delegate can cancel the close, check the result.
     if (callDelegate && ![self closeLeftViewAnimated:animated options:options callDelegate:callDelegate completion:completed]) return NO;
-    
+  
+    if (animated) {
+        [self openWithAdditionalAnimations:self.rightController.view
+                                     ledge:self.rightLedge
+                                   options:options];
+    }
+  
     [UIView animateWithDuration:OPEN_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         self.rightController.view.hidden = NO;
         [self setSlidingFrameForOffset:self.rightLedge - self.referenceBounds.size.width];
@@ -1148,7 +1278,14 @@ __typeof__(h) __h = (h);                                    \
     
     // check the delegate to allow closing
     if (callDelegate && ![self checkDelegate:@selector(viewDeckControllerWillCloseRightView:animated:) animated:animated]) return NO;
-    
+  
+    if (animated) {
+        [self closeWithAdditionalAnimations:self.rightController.view
+                                      ledge:self.rightLedge
+                                    options:options];
+    }
+
+  
     [UIView animateWithDuration:CLOSE_SLIDE_DURATION(animated) delay:0 options:options | UIViewAnimationOptionLayoutSubviews animations:^{
         [self setSlidingFrameForOffset:0];
         [self centerViewVisible];
